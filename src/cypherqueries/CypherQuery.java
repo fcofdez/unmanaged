@@ -58,4 +58,35 @@ public class CypherQuery
         String json = gson.toJson(ingCategories);
         return Response.ok(json, MediaType.APPLICATION_JSON).build();
     }
+
+    @GET
+    @Produces( MediaType.APPLICATION_JSON )
+    @Path( "/western" )
+    public Response westernEuropeCompounds()
+    {
+        ArrayList<Object> compounds = new ArrayList<Object>();
+        Map<String, Object> params = new HashMap<String, Object>();
+
+        String query = "MATCH (area:AREA {name:\"WesternEuropean\"})<-[:LOCATED_IN]-(cuisine:CUISINE)<-[:OF_CUISINE]-(recipe:RECIPE)\n" +
+                "WITH recipe, area\n" +
+                "MATCH (recipe)<-[:INGR_PART_OF]-(ingredient:INGREDIENT)<-[:COMP_PART_OF]->(comp:COMPOUND)\n" +
+                "RETURN area.name AS Area, comp.name AS Compound, count(DISTINCT recipe) AS NumberOfRecipes\n" +
+                "ORDER BY Area ASC, NumberOfRecipes DESC\n" +
+                "limit 20;";
+
+        Iterator<Map<String, Object>> result = executionEngine.execute(query, params).iterator();
+        while (result.hasNext()) {
+            Map<String, Object> row = result.next();
+            Map<String, Object> compound = new HashMap<String, Object>();
+
+            compound.put("area", row.get("Area"));
+            compound.put("compound", row.get("Compound"));
+            compound.put("number", row.get("NumberOfRecipes"));
+
+            compounds.add(compound);
+        }
+        Gson gson = new Gson();
+        String json = gson.toJson(compounds);
+        return Response.ok(json, MediaType.APPLICATION_JSON).build();
+    }
 }
